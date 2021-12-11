@@ -17,12 +17,14 @@ async def _start_command(message: types.Message):
 
 @dp.message_handler(commands=['get_users'])
 async def _get_users(message: types.Message):
-    await message.answer(f"{User.get_all_users()}")
+    u = User()
+    await message.answer(f"{u.get_all()}")
 
 
 @dp.message_handler(commands=['del_users'])
 async def _get_users(message: types.Message):
-    User.drop_collection()
+    u = User()
+    u.drop_all()
     await message.answer(f"Пользователи удалены...")
 
 
