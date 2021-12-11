@@ -1,7 +1,7 @@
 import json
 import logging
 import pytz
-import settings
+from bot import settings
 from datetime import datetime
 from pymongo import MongoClient
 
