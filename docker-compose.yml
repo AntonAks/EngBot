@@ -3,3 +3,12 @@ version: '3'
 services:
   bot:
     build: ./bot
+    links:
+      - db
+  db:
+    build: ./db
+    ports:
+      - 27017:27017
+    volumes:
+      - /usr/local/mongodb/bot_db:/data
+    restart: unless-stopped
