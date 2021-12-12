@@ -15,18 +15,19 @@ class Model(object):
         self.collection = self.__name__
 
     def __str__(self):
-        return str(self.item())
+        return str(f"{type(self)}, {self.item()}")
 
     def save(self):
         self.db[self.collection].insert_one({
             "item": self.item()
         })
 
-    def item(self):
+    def item(self) -> dict:
         return {i: self.__dict__[i] for i in self.__dict__ if i != 'collection'}
 
-    def get_all(self):
-        return list(self.db[self.__name__].find())
+    def get_all(self) -> list:
+        items = [i['item'] for i in list(self.db[self.__name__].find())]
+        return items
 
     def drop_all(self):
         self.db[self.__name__].drop()
@@ -65,22 +66,37 @@ class User(Model):
 class Word(Model):
     __name__ = 'users'
 
-    def __init__(self):
-        self.id = None
-        self.type = None
-        self.rus = None
-        self.eng = None
-        self.transcript = None
+    def __init__(self, word_id=None):
 
+        if word_id is None:
+            self.id = None
+            self.type = None
+            self.rus = None
+            self.eng = None
+            self.transcript = None
+        else:
+            self._get_word_from_db(word_id)
         super().__init__()
 
-    def _get_user_from_db(self, word_id):
-        user = Model.db[__class__.__name__].find_one({"item.id": word_id})
-        self.id = user['item']['id']
-        self.timezone = user['item']['timezone']
+    def _get_word_from_db(self, word_id):
+        word = Model.db[__class__.__name__].find_one({"item.id": word_id})
+        self.id = word['item']['id']
+        self.type = word['item']['type']
+        self.rus = word['item']['rus']
+        self.eng = word['item']['eng']
+        self.transcript = word['item']['transcript']
 
 
 class Message(Model):
+    __name__ = "messages"
+
     def __init__(self):
         super().__init__()
 
+
+if __name__ == '__main__':
+    w = Word()
+
+    for i in w.get_all():
+         w = Word(i['id'])
+         print(w)
