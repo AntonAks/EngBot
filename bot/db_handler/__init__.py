@@ -11,14 +11,11 @@ client = MongoClient(settings.DB)
 class Model(object):
     db = client.engbot_db
 
-    def __init__(self):
-        self.collection = self.__name__
-
     def __str__(self):
         return str(f"{type(self)}, {self.item()}")
 
     def save(self):
-        self.db[self.collection].insert_one({
+        self.db[self.__name__].insert_one({
             "item": self.item()
         })
 
@@ -26,10 +23,12 @@ class Model(object):
         return {i: self.__dict__[i] for i in self.__dict__ if i != 'collection'}
 
     def get_all(self) -> list:
+        print(self.__name__)
         items = [i['item'] for i in list(self.db[self.__name__].find())]
         return items
 
     def drop_all(self):
+        print(self.__name__)
         self.db[self.__name__].drop()
 
 
@@ -39,13 +38,16 @@ class User(Model):
     def __init__(self, user_id=None):
         if user_id is None:
             self.id = None
+            self.learned = []
+            self.repeat = []
+            self.private = []
             self.timezone = str(pytz.timezone('Europe/Kiev'))
         else:
             self._get_user_from_db(user_id)
         super().__init__()
 
     def is_user_exist(self):
-        check = Model.db[__class__.__name__].find_one({"item.id": self.id})
+        check = Model.db[self.__name__].find_one({"item.id": self.id})
         if check is None:
             return False
         return True
@@ -58,13 +60,16 @@ class User(Model):
             super(User, self).save()
 
     def _get_user_from_db(self, user_id):
-        user = Model.db[__class__.__name__].find_one({"item.id": user_id})
+        user = Model.db[self.__name__].find_one({"item.id": user_id})
         self.id = user['item']['id']
         self.timezone = user['item']['timezone']
+        self.learned = user['item']['learned']
+        self.repeat = user['item']['repeat']
+        self.private = user['item']['private']
 
 
 class Word(Model):
-    __name__ = 'users'
+    __name__ = 'words'
 
     def __init__(self, word_id=None):
 
@@ -79,12 +84,22 @@ class Word(Model):
         super().__init__()
 
     def _get_word_from_db(self, word_id):
-        word = Model.db[__class__.__name__].find_one({"item.id": word_id})
+        word = Model.db[self.__name__].find_one({"item.id": word_id})
         self.id = word['item']['id']
         self.type = word['item']['type']
         self.rus = word['item']['rus']
         self.eng = word['item']['eng']
         self.transcript = word['item']['transcript']
+
+    def get_random_word(self):
+        word = Model.db[self.__name__].aggregate([{"$sample": {"size": 1}}])
+        word = list(word)[0]
+        self.id = word['item']['id']
+        self.type = word['item']['type']
+        self.rus = word['item']['rus']
+        self.eng = word['item']['eng']
+        self.transcript = word['item']['transcript']
+        return self
 
 
 class Message(Model):
@@ -92,3 +107,8 @@ class Message(Model):
 
     def __init__(self):
         super().__init__()
+
+
+if __name__ == '__main__':
+    u = User()
+    print(u.get_all())
