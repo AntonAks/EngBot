@@ -1,9 +1,10 @@
+import re
 from aiogram import types
 from loader import dp
 from db_handler import Message, User
 from keyboards import main_keyboard
 from loader import bot
-from learn_engine import get_word_to_learn, get_word_to_repeat
+from learn_engine import get_word_to_learn, get_word_to_repeat, prepare_word_card
 
 
 # COMMAND HANDLERS
@@ -46,17 +47,33 @@ async def get_learn_words(chat_id):
     dontknow = types.InlineKeyboardButton(text='❌ Не знаю', callback_data='dontknow')
     navigation_btns.row(dontknow, know)
     word = get_word_to_learn(chat_id)
-    word = word.item()
-    await bot.send_message(chat_id, word, disable_notification=True, reply_markup=navigation_btns)
+    word_card = prepare_word_card(word)
+
+    await bot.send_message(chat_id,
+                           word_card,
+                           disable_notification=True,
+                           parse_mode="html",
+                           reply_markup=navigation_btns)
 
 
 @dp.callback_query_handler(lambda c: c.data in ['dontknow', 'know'])
 async def news_page_callback(call):
+    chat_id = call.message.chat.id
+    user = User(chat_id)
+    print(user)
+    print(user.item())
+    text = call.message.text
+    word_id = text[text.find('id: ') + len('id: '):text.rfind(')')]
+
     if call['data'] == "know":
+        user.learned.append(word_id)
+        user.update(chat_id)
         await bot.delete_message(call.message.chat.id, call.message.message_id)
         await get_learn_words(call["message"]["chat"]["id"])
 
     if call['data'] == "dontknow":
+        user.repeat.append(word_id)
+        user.update(chat_id)
         await bot.delete_message(call.message.chat.id, call.message.message_id)
         await get_learn_words(call["message"]["chat"]["id"])
 
@@ -90,3 +107,7 @@ async def other_grammar(message: types.Message):
 #     m.save()
 #     await message.answer(f"echo answer: {message['text']}")
 
+
+
+if __name__ == '__main__':
+    print()

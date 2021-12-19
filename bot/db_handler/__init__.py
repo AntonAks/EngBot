@@ -19,6 +19,11 @@ class Model(object):
             "item": self.item()
         })
 
+    def update(self, _id):
+        mongo_obj = self.db[self.__name__].find_one({"item.id": _id})
+        self.db[self.__name__].update_one({"_id": mongo_obj['_id']},
+                                          {"$set": {f"item.{i}": self.__dict__[i] for i in self.__dict__ if i != 'collection'}})
+
     def item(self) -> dict:
         return {i: self.__dict__[i] for i in self.__dict__ if i != 'collection'}
 
