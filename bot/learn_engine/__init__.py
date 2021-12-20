@@ -1,4 +1,5 @@
 from db_handler import User, Word
+from random import choice
 
 
 def get_word_to_learn(chat_id):
@@ -12,12 +13,8 @@ def get_word_to_learn(chat_id):
 
 
 def get_word_to_repeat(chat_id):
-    w = Word()
     user = User(user_id=chat_id)
-    while True:
-        w = w.get_random_word()
-        if w.id not in user.repeat:
-            break
+    w = Word(int(choice(user.learned)))
     return w
 
 
@@ -34,5 +31,5 @@ def prepare_word_card(word):
 
 
 if __name__ == '__main__':
-    w = get_word_to_learn(105626824)
+    w = get_word_to_repeat(105626824)
     print(prepare_word_card(w))

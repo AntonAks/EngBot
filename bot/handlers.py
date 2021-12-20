@@ -34,14 +34,15 @@ async def _get_users(message: types.Message):
 
 
 # CALLBACK HANDLERS
-@dp.callback_query_handler(lambda c: c.data in ['learn_words'])
-async def learn_words(message: types.Message):
+# CHECK WORDS
+@dp.callback_query_handler(lambda c: c.data in ['check_words'])
+async def check_words(message: types.Message):
     chat_id = message["message"]["chat"]["id"]
     await bot.send_message(chat_id, "LEARN WORDS STARTED!!!")
-    await get_learn_words(chat_id)
+    await get_word_for_check(chat_id)
 
 
-async def get_learn_words(chat_id):
+async def get_word_for_check(chat_id):
     navigation_btns = types.InlineKeyboardMarkup()
     know = types.InlineKeyboardButton(text='✅ Знаю', callback_data='know')
     dontknow = types.InlineKeyboardButton(text='❌ Не знаю', callback_data='dontknow')
@@ -57,7 +58,7 @@ async def get_learn_words(chat_id):
 
 
 @dp.callback_query_handler(lambda c: c.data in ['dontknow', 'know'])
-async def news_page_callback(call):
+async def check_words_callback(call):
     chat_id = call.message.chat.id
     user = User(chat_id)
     print(user)
@@ -69,13 +70,56 @@ async def news_page_callback(call):
         user.learned.append(word_id)
         user.update(chat_id)
         await bot.delete_message(call.message.chat.id, call.message.message_id)
-        await get_learn_words(call["message"]["chat"]["id"])
+        await get_word_for_check(call["message"]["chat"]["id"])
 
     if call['data'] == "dontknow":
         user.repeat.append(word_id)
         user.update(chat_id)
         await bot.delete_message(call.message.chat.id, call.message.message_id)
-        await get_learn_words(call["message"]["chat"]["id"])
+        await get_word_for_check(call["message"]["chat"]["id"])
+
+
+# REPEAT WORDS
+@dp.callback_query_handler(lambda c: c.data in ['check_words'])
+async def repeat_words(message: types.Message):
+    chat_id = message["message"]["chat"]["id"]
+    await bot.send_message(chat_id, "LEARN WORDS STARTED!!!")
+    await get_word_for_repeat(chat_id)
+
+
+async def get_word_for_repeat(chat_id):
+    navigation_btns = types.InlineKeyboardMarkup()
+    know = types.InlineKeyboardButton(text='✅ Выучил', callback_data='learned')
+    dontknow = types.InlineKeyboardButton(text='❌ Повторять еще', callback_data='repeat_again')
+    navigation_btns.row(dontknow, know)
+    word = get_word_to_repeat(chat_id)
+    word_card = prepare_word_card(word)
+
+    await bot.send_message(chat_id,
+                           word_card,
+                           disable_notification=True,
+                           parse_mode="html",
+                           reply_markup=navigation_btns)
+
+
+async def repeat_words_callback(call):
+    chat_id = call.message.chat.id
+    user = User(chat_id)
+    print(user)
+    print(user.item())
+    text = call.message.text
+    word_id = text[text.find('id: ') + len('id: '):text.rfind(')')]
+
+    if call['data'] == "learned":
+        user.learned.append(word_id)
+        user.repeat.remove(word_id)
+        user.update(chat_id)
+        await bot.delete_message(call.message.chat.id, call.message.message_id)
+        await get_word_for_repeat(call["message"]["chat"]["id"])
+
+    if call['data'] == "repeat_again":
+        await bot.delete_message(call.message.chat.id, call.message.message_id)
+        await get_word_for_repeat(call["message"]["chat"]["id"])
 
 
 @dp.callback_query_handler(lambda c: c.data in ['tenses_quiz'])
