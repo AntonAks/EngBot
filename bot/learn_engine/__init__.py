@@ -14,17 +14,26 @@ def get_word_to_learn(chat_id):
 
 def get_word_to_repeat(chat_id):
     user = User(user_id=chat_id)
-    w = Word(int(choice(user.learned)))
-    return w
+    if len(user.repeat):
+        return Word(int(choice(user.repeat)))
 
 
-def prepare_word_card(word):
+def prepare_word_card(word, chat_id):
+    user = User(user_id=chat_id)
     text = f"""
-    <b>{str(word.eng).upper()}  -  {word.transcript}</b>
-
-<b>{word.rus}</b>
-
+<i>Выучено: {len(user.learned)} из {500}</i>
+<i>Для повторения: {len(user.repeat)}</i>
 <i>({word.type} id: {word.id})</i>
+--------------------------------------------
+    
+    <b>{str(word.eng).upper()}</b>
+
+    <i>{word.transcript}</i>
+
+    <b>{str(word.rus).upper()}</b>
+    
+    <b> </b>
+    
     """
 
     return text
